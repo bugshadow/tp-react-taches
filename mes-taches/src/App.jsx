@@ -1,5 +1,18 @@
+import Entete from "./components/Entete";
+import Pied from "./components/Pied";
+import ListeTaches from "./components/ListeTaches";
+
 function App(){
-  return <h1>Bonjour React</h1>
+    return (
+        <div className="app">
+            <Entete />
+            <section className="carte">
+                <h2>Ma Liste</h2>
+                <ListeTaches />
+            </section>
+            <Pied />
+        </div>
+    )
 }
 
 export default App;
