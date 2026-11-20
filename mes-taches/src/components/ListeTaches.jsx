@@ -1,17 +1,24 @@
 import Tache from "./Tache";
 
-function ListeTaches({ taches }) {
-    if (taches.length === 0) {
+function ListeTaches({ taches, onBasculer, onSupprimer }) {
+  if (taches.length === 0) {
     return <p className="vide">Aucune tâche à afficher.</p>;
-    }
+  }
 
-    return (
+  return (
     <ul className="liste-taches">
-        {taches.map((tache) => (
-        <Tache key={tache.id} titre={tache.titre} terminee={tache.terminee} />
-        ))}
+      {taches.map((tache) => (
+        <Tache
+          key={tache.id}
+          id={tache.id}
+          titre={tache.titre}
+          terminee={tache.terminee}
+          onBasculer={onBasculer}
+          onSupprimer={onSupprimer}
+        />
+      ))}
     </ul>
-    );
+  );
 }
 
 export default ListeTaches;

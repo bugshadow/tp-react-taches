@@ -1,10 +1,10 @@
 function Carte({ titre, children }) {
-    return (
+  return (
     <section className="carte">
-        <h2>{titre}</h2>
-        <p>{children}</p>
+      <h2>{titre}</h2>
+      {children}
     </section>
-    )
+  );
 }
 
-export default Carte
+export default Carte;
