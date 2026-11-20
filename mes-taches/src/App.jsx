@@ -12,14 +12,31 @@ import Horloge from "./components/Horloge";
 const TITRE = "Mes tâches";
 const SOUS_TITRE = "Mon premier projet React";
 const AUTEUR = "BOUHADDACH OMAR";
+const CLE_STOCKAGE = "mes-taches";
+
+function lireTachesSauvegardees() {
+  try {
+    const donnees = localStorage.getItem(CLE_STOCKAGE);
+    return donnees === null ? null : JSON.parse(donnees);
+  } catch {
+    return null;
+  }
+}
 
 function App() {
-  const [taches, setTaches] = useState([]);
+  const [taches, setTaches] = useState(() => lireTachesSauvegardees() ?? []);
   const [filtre, setFiltre] = useState("toutes");
-  const [chargement, setChargement] = useState(true);
+  const [chargement, setChargement] = useState(
+    () => lireTachesSauvegardees() === null
+  );
   const [erreur, setErreur] = useState(null);
+  const [horlogeVisible, setHorlogeVisible] = useState(true);
 
   useEffect(() => {
+    // Si des tâches sont déjà enregistrées dans le navigateur,
+    // on ne recharge pas le fichier JSON.
+    if (lireTachesSauvegardees() !== null) return;
+
     let annule = false;
 
     fetch("/taches.json")
@@ -42,6 +59,16 @@ function App() {
     };
   }, []);
 
+  // Sauvegarde automatique dans localStorage à chaque modification.
+  useEffect(() => {
+    if (chargement || erreur) return;
+    try {
+      localStorage.setItem(CLE_STOCKAGE, JSON.stringify(taches));
+    } catch {
+      // Stockage indisponible (mode privé, quota…) : on ignore.
+    }
+  }, [taches, chargement, erreur]);
+
   function basculerTache(id) {
     setTaches((precedentes) =>
       precedentes.map((tache) =>
@@ -60,6 +87,22 @@ function App() {
       { id: Date.now(), titre, terminee: false },
     ]);
   }
+
+  function modifierTache(id, nouveauTitre) {
+    setTaches((precedentes) =>
+      precedentes.map((tache) =>
+        tache.id === id ? { ...tache, titre: nouveauTitre } : tache
+      )
+    );
+  }
+
+  function supprimerTerminees() {
+    setTaches((precedentes) =>
+      precedentes.filter((tache) => !tache.terminee)
+    );
+  }
+
+  const terminees = taches.filter((tache) => tache.terminee).length;
 
   const tachesVisibles = taches.filter((tache) => {
     if (filtre === "actives") return !tache.terminee;
@@ -80,7 +123,12 @@ function App() {
         <Compteur />
       </Carte>
       <Carte titre="Heure actuelle">
-        <Horloge />
+        <div className="ligne">
+          <button onClick={() => setHorlogeVisible(!horlogeVisible)}>
+            {horlogeVisible ? "Masquer l'horloge" : "Afficher l'horloge"}
+          </button>
+        </div>
+        {horlogeVisible && <Horloge />}
       </Carte>
       <Carte titre="Nouvelle tâche">
         <Formulaire onAjouter={ajouterTache} />
@@ -96,8 +144,18 @@ function App() {
             taches={tachesVisibles}
             onBasculer={basculerTache}
             onSupprimer={supprimerTache}
+            onModifier={modifierTache}
           />
         )}
+        <div className="ligne" style={{ marginTop: "12px" }}>
+          <button
+            className="danger"
+            onClick={supprimerTerminees}
+            disabled={terminees === 0}
+          >
+            Supprimer les tâches terminées
+          </button>
+        </div>
       </Carte>
       <Carte titre="Statistiques">
         <Statistiques taches={taches} />
