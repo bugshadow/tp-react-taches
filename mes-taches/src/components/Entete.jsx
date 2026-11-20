@@ -1,8 +1,8 @@
-function Entete() {
+function Entete({Titre,sousTitre}) {
     return (
         <header className="entete">
-            <h1>Mes taches</h1>
-            <p>Mon premier projet React</p>
+            <h1>{Titre}</h1>
+            <p>{sousTitre}</p>
         </header>
     )
 }
