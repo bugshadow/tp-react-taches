@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Entete from "./components/Entete";
 import Pied from "./components/Pied";
 import ListeTaches from "./components/ListeTaches";
@@ -7,21 +7,40 @@ import Compteur from "./components/Compteur";
 import Formulaire from "./components/Formulaire";
 import Filtres from "./components/Filtres";
 import Statistiques from "./components/Statistiques";
+import Horloge from "./components/Horloge";
 
 const TITRE = "Mes tâches";
 const SOUS_TITRE = "Mon premier projet React";
 const AUTEUR = "BOUHADDACH OMAR";
 
-const TACHES_INITIALES = [
-  { id: 1, titre: "Installer Node.js et Vite", terminee: true },
-  { id: 2, titre: "Comprendre les composants", terminee: true },
-  { id: 3, titre: "Passer des données avec les props", terminee: false },
-  { id: 4, titre: "Gérer l'état avec useState", terminee: false },
-];
-
 function App() {
-  const [taches, setTaches] = useState(TACHES_INITIALES);
+  const [taches, setTaches] = useState([]);
   const [filtre, setFiltre] = useState("toutes");
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
+
+  useEffect(() => {
+    let annule = false;
+
+    fetch("/taches.json")
+      .then((reponse) => {
+        if (!reponse.ok) throw new Error(`Erreur HTTP ${reponse.status}`);
+        return reponse.json();
+      })
+      .then((donnees) => {
+        if (!annule) setTaches(donnees);
+      })
+      .catch((err) => {
+        if (!annule) setErreur(err.message);
+      })
+      .finally(() => {
+        if (!annule) setChargement(false);
+      });
+
+    return () => {
+      annule = true;
+    };
+  }, []);
 
   function basculerTache(id) {
     setTaches((precedentes) =>
@@ -48,22 +67,37 @@ function App() {
     return true;
   });
 
+  const restantes = taches.filter((tache) => !tache.terminee).length;
+
+  useEffect(() => {
+    document.title = `(${restantes}) ${TITRE}`;
+  }, [restantes]);
+
   return (
     <div className="app">
       <Entete titre={TITRE} sousTitre={SOUS_TITRE} />
       <Carte titre="Compteur">
         <Compteur />
       </Carte>
+      <Carte titre="Heure actuelle">
+        <Horloge />
+      </Carte>
       <Carte titre="Nouvelle tâche">
         <Formulaire onAjouter={ajouterTache} />
       </Carte>
       <Carte titre="Ma liste">
         <Filtres filtre={filtre} onChanger={setFiltre} />
-        <ListeTaches
-          taches={tachesVisibles}
-          onBasculer={basculerTache}
-          onSupprimer={supprimerTache}
-        />
+        {chargement ? (
+          <p className="vide">Chargement des tâches…</p>
+        ) : erreur ? (
+          <p className="erreur">Impossible de charger les tâches : {erreur}</p>
+        ) : (
+          <ListeTaches
+            taches={tachesVisibles}
+            onBasculer={basculerTache}
+            onSupprimer={supprimerTache}
+          />
+        )}
       </Carte>
       <Carte titre="Statistiques">
         <Statistiques taches={taches} />
